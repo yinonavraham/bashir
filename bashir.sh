@@ -12,21 +12,45 @@ function bashirLogVerbose {
   fi
 }
 
+function bashirEchoError {
+  echo "$@" >&2
+}
+
 function bashirExitWithError {
   local msg="$1"
   local code="${2:-1}"
-  echo "ERROR: ${msg}"
-  exit ${code}
+  bashirEchoError "ERROR: ${msg}"
+  exit "${code}"
 }
 
 function bashirImport {
   local path="$1"
+  local fullLibPath="${BASHIR_SCRIPT_INSTALL_DIR}/lib/${path}"
+  local fullDepPath="${BASHIR_SCRIPT_INSTALL_DIR}/dep/${path}"
+  bashirLogVerbose "Checking source file to import exists in lib: '${fullLibPath}' or dep: '${fullDepPath}'"
+  if [[ -f "${fullLibPath}" ]]; then
+    bashirLogVerbose "Importing source file from lib path: ${fullLibPath}"
+    # shellcheck source=/dev/null
+    source "${fullLibPath}"
+  elif [[ -f "${fullDepPath}" ]]; then
+    bashirLogVerbose "Importing source file from dep path: ${fullDepPath}"
+    # shellcheck source=/dev/null
+    source "${fullDepPath}"
+  else
+    bashirExitWithError "Import file not found: ${path}"
+  fi
+}
+
+function __bashirImport {
+  local path="$1"
   local fullPath="${BASHIR_SCRIPT_INSTALL_DIR}/${path}"
-  bashirLogVerbose "Importing source file from path: ${fullPath}"
-  if [[ ! -f "${fullPath}" ]]; then
+  bashirLogVerbose "Importing source file from path: '${fullPath}'"
+  if [[ -f "${fullPath}" ]]; then
+    # shellcheck source=/dev/null
+    source "${fullPath}"
+  else
     bashirExitWithError "Import file not found: ${fullPath}"
   fi
-  source "${fullPath}"
 }
 
 readonly BASHIR_WORK_DIR="$(pwd)"
@@ -35,7 +59,7 @@ readonly BASHIR_SCRIPT_NAME="$(basename "$0")"
 readonly BASHIR_SCRIPT_PATH="${BASHIR_SCRIPT_DIR}/${BASHIR_SCRIPT_NAME}"
 
 BASHIR_SCRIPT_INSTALL_PATH="$(readlink -n "$0" || echo '')"
-if [[ ! -z "${BASHIR_SCRIPT_INSTALL_PATH}" ]]; then
+if [[ -n "${BASHIR_SCRIPT_INSTALL_PATH}" ]]; then
   if [[ "${BASHIR_SCRIPT_INSTALL_PATH}" != /* ]]; then
     BASHIR_SCRIPT_INSTALL_PATH="${BASHIR_SCRIPT_DIR}/${BASHIR_SCRIPT_INSTALL_PATH}"
   fi
@@ -56,11 +80,12 @@ bashirLogVerbose "Script Install Name: '${BASHIR_SCRIPT_INSTALL_NAME}'"
 
 if [[ -f "${BASHIR_SCRIPT_INSTALL_PATH}.env" ]]; then 
   bashirLogVerbose "Importing bashir environment from path: ${BASHIR_SCRIPT_INSTALL_PATH}.env"
+  # shellcheck source=/dev/null
   source "${BASHIR_SCRIPT_INSTALL_PATH}.env"
 fi
 
 readonly BASHIR_MAIN_FILE="${BASHIR_MAIN_FILE:-main.sh}"
 bashirLogVerbose "Bashir Main File: '${BASHIR_MAIN_FILE}'"
-bashirImport "${BASHIR_MAIN_FILE}"
+__bashirImport "${BASHIR_MAIN_FILE}"
 
 main "$@"
