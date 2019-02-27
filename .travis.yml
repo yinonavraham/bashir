@@ -1,0 +1,24 @@
+language: bash
+
+os:
+  - linux
+
+env:
+  - BASHVER=
+  - BASHVER=3.2
+  - BASHVER=4.0
+  - BASHVER=4.1
+  - BASHVER=4.2
+  - BASHVER=4.3
+  - BASHVER=4.4
+
+matrix:
+  include:
+    - os: osx
+
+services:
+  - docker
+
+script:
+  - |
+    ./bashir.sh lint
