@@ -1,10 +1,8 @@
 language: bash
 
-os:
-  - linux
-
 matrix:
   include:
+    - os: linux
     - os: osx
 
 services:
@@ -13,4 +11,6 @@ services:
 script:
   - |
     BASHIR_VERBOSE=true ./bashir.sh --help
-    [[ "$TRAVIS_OS_NAME" == 'linux' ]] && BASHIR_VERBOSE=true ./bashir.sh lint
+    if [[ "$TRAVIS_OS_NAME" == 'linux' ]]; then
+      BASHIR_VERBOSE=true ./bashir.sh lint
+    fi
