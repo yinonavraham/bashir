@@ -4,7 +4,7 @@ bashirImport "bashir/string_util.sh"
 bashirImport "bashir/os_util.sh"
 
 function __shellcheckDocker {
-  docker run -v "$PWD:/mnt" koalaman/shellcheck:stable "$1"
+  docker run --rm -v "$PWD:/mnt" koalaman/shellcheck:stable "$1"
 }
 
 function __shellcheckAppendIfFailed {
